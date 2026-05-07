@@ -4,10 +4,14 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QPushButton>
-#include <QProcess>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QWidget>
+#include <QTimer>
+
+class QMediaPlayer;
+class QAudioOutput;
+class QVideoWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -20,20 +24,17 @@ public:
 private slots:
     void startStream();
     void stopStream();
-    void onProcessError();
-    void onReadyRead();
 
 private:
-    // Widget d'affichage vidéo GStreamer (window ID)
-    QWidget     *videoContainer;
-    QLabel      *statusLabel;
-    QPushButton *btnStart;
-    QPushButton *btnStop;
+    QVideoWidget *videoWidget  = nullptr;
+    QMediaPlayer *player       = nullptr;
+    QAudioOutput *audio        = nullptr;
 
-    QProcess    *gstProcess;
+    QLabel       *statusLabel  = nullptr;
+    QPushButton  *btnStart     = nullptr;
+    QPushButton  *btnStop      = nullptr;
 
     void setupUI();
-    void setupGStreamer();
 };
 
 #endif // MAINWINDOW_H
