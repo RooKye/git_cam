@@ -7,11 +7,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QWidget>
-#include <QTimer>
-
-class QMediaPlayer;
-class QAudioOutput;
-class QVideoWidget;
+#include <QWebEngineView>
+#include <QWebEnginePage>
+#include <QWebEngineSettings>
 
 class MainWindow : public QMainWindow
 {
@@ -22,17 +20,12 @@ public:
     ~MainWindow();
 
 private slots:
-    void startStream();
-    void stopStream();
+    void reloadStream();
 
 private:
-    QVideoWidget *videoWidget  = nullptr;
-    QMediaPlayer *player       = nullptr;
-    QAudioOutput *audio        = nullptr;
-
-    QLabel       *statusLabel  = nullptr;
-    QPushButton  *btnStart     = nullptr;
-    QPushButton  *btnStop      = nullptr;
+    QWebEngineView *webView    = nullptr;
+    QLabel         *statusLabel = nullptr;
+    QPushButton    *btnReload  = nullptr;
 
     void setupUI();
 };
