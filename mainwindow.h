@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-
-class QMediaPlayer;
-class QAudioOutput;
-class QVideoWidget;
+#include <QLabel>
+#include <QPushButton>
+#include <QProcess>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QWidget>
 
 class MainWindow : public QMainWindow
 {
@@ -15,10 +17,23 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void startStream();
+    void stopStream();
+    void onProcessError();
+    void onReadyRead();
+
 private:
-    QMediaPlayer *player;
-    QAudioOutput *audio;
-    QVideoWidget *videoWidget;
+    // Widget d'affichage vidéo GStreamer (window ID)
+    QWidget     *videoContainer;
+    QLabel      *statusLabel;
+    QPushButton *btnStart;
+    QPushButton *btnStop;
+
+    QProcess    *gstProcess;
+
+    void setupUI();
+    void setupGStreamer();
 };
 
 #endif // MAINWINDOW_H
