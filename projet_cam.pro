@@ -3,4 +3,8 @@ QT += core gui widgets multimedia multimediawidgets
 CONFIG += c++17
 
 SOURCES += \
-    main.cpp
+    main.cpp \
+    mainwindow.cpp
+
+HEADERS += \
+    mainwindow.h
