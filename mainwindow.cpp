@@ -14,13 +14,15 @@ class CamWebPage : public QWebEnginePage
 {
 public:
     explicit CamWebPage(QObject *parent = nullptr)
-        : QWebEnginePage(parent) {}
-
-    // Accepte le certificat auto-signé du Pi (évite l'écran d'erreur)
-    bool certificateError(const QWebEngineCertificateError &error) override
+        : QWebEnginePage(parent)
     {
-        qDebug() << "[TLS] Certificat auto-signé accepté :" << error.url();
-        return true;   // true = ignorer l'erreur et continuer
+        // Qt6 : accepte les certificats auto-signés via signal
+        connect(this, &QWebEnginePage::certificateError,
+                this, [](QWebEngineCertificateError error)
+                {
+                    qDebug() << "[TLS] Certificat auto-signé accepté :" << error.url();
+                    error.acceptCertificate();
+                });
     }
 };
 
