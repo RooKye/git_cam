@@ -1,113 +1,66 @@
 #include "mainwindow.h"
 
-#include <QWebEngineProfile>
-#include <QWebEngineCertificateError>
-#include <QDebug>
+#include <QWidget>
+#include <QVBoxLayout>
 
-// ─── Configuration ────────────────────────────────────────────────────────────
-// Adresse IP du Raspberry Pi sur le réseau local
-static const QString RPI_IP   = "200.26.16.20";
-static const QString WEBRTC_URL = QString("https://%1:8889/rascam").arg(RPI_IP);
-
-// ─── Page personnalisée pour accepter le certificat auto-signé ────────────────
-class CamWebPage : public QWebEnginePage
-{
-public:
-    explicit CamWebPage(QObject *parent = nullptr)
-        : QWebEnginePage(parent)
-    {
-        // Qt6 : accepte les certificats auto-signés via signal
-        connect(this, &QWebEnginePage::certificateError,
-                this, [](QWebEngineCertificateError error)
-                {
-                    qDebug() << "[TLS] Certificat auto-signé accepté :" << error.url();
-                    error.acceptCertificate();
-                });
-    }
-};
-
-// ─── MainWindow ───────────────────────────────────────────────────────────────
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+    videoWidget(nullptr),
+    vlcInstance(nullptr),
+    mediaPlayer(nullptr)
 {
-    setWindowTitle("Camera – WebRTC sécurisé");
-    resize(960, 600);
+    setWindowTitle("Caméra RTSP");
+    resize(1000, 600);
 
-    setupUI();
-}
-
-MainWindow::~MainWindow() {}
-
-void MainWindow::setupUI()
-{
     QWidget *central = new QWidget(this);
     setCentralWidget(central);
 
-    QVBoxLayout *mainLayout = new QVBoxLayout(central);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
+    QVBoxLayout *layout = new QVBoxLayout(central);
+    layout->setContentsMargins(0, 0, 0, 0);
 
-    // ── WebView ──────────────────────────────────────────────────────────────
-    webView = new QWebEngineView(this);
+    videoWidget = new QWidget(this);
+    videoWidget->setStyleSheet("background-color: black;");
+    videoWidget->setAttribute(Qt::WA_NativeWindow);
 
-    // Utilise notre page qui accepte le certificat auto-signé
-    CamWebPage *page = new CamWebPage(webView);
-    webView->setPage(page);
+    layout->addWidget(videoWidget);
 
-    // Active les permissions nécessaires à WebRTC
-    auto *settings = webView->settings();
-    settings->setAttribute(QWebEngineSettings::JavascriptEnabled,          true);
-    settings->setAttribute(QWebEngineSettings::LocalStorageEnabled,        true);
-    settings->setAttribute(QWebEngineSettings::AllowRunningInsecureContent, false);
+    const char *vlcArgs[] = {
+        "--no-video-title-show"
+    };
 
-    // Autorise l'accès caméra/micro pour WebRTC (mediamtx en a besoin)
-    connect(page, &QWebEnginePage::featurePermissionRequested,
-            this, [page](const QUrl &origin, QWebEnginePage::Feature feature)
-            {
-                // On accorde toutes les permissions WebRTC
-                page->setFeaturePermission(origin, feature,
-                    QWebEnginePage::PermissionGrantedByUser);
-            });
+    vlcInstance = libvlc_new(1, vlcArgs);
+    mediaPlayer = libvlc_media_player_new(vlcInstance);
 
-    connect(webView, &QWebEngineView::loadStarted, this, [this]
-    {
-        statusLabel->setText("Connexion en cours…");
-    });
+    WId id = videoWidget->winId();
 
-    connect(webView, &QWebEngineView::loadFinished, this, [this](bool ok)
-    {
-        statusLabel->setText(ok ? "✔ WebRTC connecté (chiffré)" : "⚠ Échec de connexion");
-    });
+#ifdef Q_OS_WIN
+    libvlc_media_player_set_hwnd(mediaPlayer, reinterpret_cast<void *>(id));
+#elif defined(Q_OS_MAC)
+    libvlc_media_player_set_nsobject(mediaPlayer, reinterpret_cast<void *>(id));
+#else
+    libvlc_media_player_set_xwindow(mediaPlayer, static_cast<uint32_t>(id));
+#endif
 
-    webView->setMinimumSize(640, 480);
-    webView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    webView->load(QUrl(WEBRTC_URL));
+    const char *url = "rtsp://200.26.16.20:8554/rascam";
 
-    mainLayout->addWidget(webView, 1);
+    libvlc_media_t *media = libvlc_media_new_location(vlcInstance, url);
 
-    // ── Barre de contrôle ────────────────────────────────────────────────────
-    QWidget *controls = new QWidget(this);
-    controls->setFixedHeight(44);
-    controls->setStyleSheet("background-color: #1e1e1e;");
-    QHBoxLayout *ctrlLayout = new QHBoxLayout(controls);
-    ctrlLayout->setContentsMargins(8, 4, 8, 4);
+    libvlc_media_add_option(media, ":rtsp-tcp");
+    libvlc_media_add_option(media, ":network-caching=150");
 
-    btnReload = new QPushButton("↺  Reconnecter", controls);
-    statusLabel = new QLabel("En attente…", controls);
-    statusLabel->setStyleSheet("color: #aaaaaa; font-size: 12px;");
+    libvlc_media_player_set_media(mediaPlayer, media);
+    libvlc_media_release(media);
 
-    ctrlLayout->addWidget(btnReload);
-    ctrlLayout->addStretch();
-    ctrlLayout->addWidget(statusLabel);
-
-    mainLayout->addWidget(controls);
-
-    connect(btnReload, &QPushButton::clicked, this, &MainWindow::reloadStream);
+    libvlc_media_player_play(mediaPlayer);
 }
 
-void MainWindow::reloadStream()
+MainWindow::~MainWindow()
 {
-    statusLabel->setText("Reconnexion…");
-    webView->load(QUrl(WEBRTC_URL));
+    libvlc_media_player_stop(mediaPlayer);
+    libvlc_media_player_release(mediaPlayer);
+    libvlc_release(vlcInstance);
 }

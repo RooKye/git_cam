@@ -2,14 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QLabel>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
 #include <QWidget>
-#include <QWebEngineView>
-#include <QWebEnginePage>
-#include <QWebEngineSettings>
+#include <vlc/vlc.h>
 
 class MainWindow : public QMainWindow
 {
@@ -19,15 +13,11 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-private slots:
-    void reloadStream();
-
 private:
-    QWebEngineView *webView    = nullptr;
-    QLabel         *statusLabel = nullptr;
-    QPushButton    *btnReload  = nullptr;
+    QWidget *videoWidget;
 
-    void setupUI();
+    libvlc_instance_t *vlcInstance;
+    libvlc_media_player_t *mediaPlayer;
 };
 
 #endif // MAINWINDOW_H

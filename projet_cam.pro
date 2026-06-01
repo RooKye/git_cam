@@ -1,4 +1,4 @@
-QT += core gui widgets webenginewidgets
+QT += core gui widgets
 
 CONFIG += c++17
 
@@ -8,3 +8,8 @@ SOURCES += \
 
 HEADERS += \
     mainwindow.h
+
+unix:!macx {
+    CONFIG += link_pkgconfig
+    PKGCONFIG += libvlc
+}
