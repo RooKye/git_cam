@@ -8,9 +8,3 @@ SOURCES += \
 
 HEADERS += \
     mainwindow.h
-
-# Linux / Ubuntu
-unix:!macx {
-    CONFIG += link_pkgconfig
-    PKGCONFIG += libvlc
-}

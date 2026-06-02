@@ -2,8 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QWidget>
-#include <vlc/vlc.h>
+
+class QWidget;
+class QProcess;
 
 class MainWindow : public QMainWindow
 {
@@ -14,10 +15,11 @@ public:
     ~MainWindow();
 
 private:
-    QWidget *videoWidget;
+    void startMpv();
 
-    libvlc_instance_t *vlcInstance;
-    libvlc_media_player_t *mediaPlayer;
+private:
+    QWidget *videoWidget;
+    QProcess *mpvProcess;
 };
 
 #endif // MAINWINDOW_H
