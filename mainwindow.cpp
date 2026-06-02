@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
     libvlc_media_player_set_xwindow(mediaPlayer, static_cast<uint32_t>(id));
 #endif
 
-    const char *url = "rtsp://200.26.16.20:8554/rascam";
+    const char *url = "rtsp rtsp://127.0.0.1:8554/rascam";
 
     libvlc_media_t *media = libvlc_media_new_location(vlcInstance, url);
 
